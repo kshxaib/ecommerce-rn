@@ -20,7 +20,7 @@ export default function Login() {
 
     const result = await login(email, password);
     if (result.success) {
-      router.replace('/');
+      router.replace('/(tabs)');
     } else {
       Alert.alert("Login Failed", result.error);
     }

@@ -28,7 +28,7 @@ export default function Signup() {
 
     const result = await register(name, email, password, confirmPassword);
     if (result.success) {
-      router.replace('/');
+      router.replace('/(tabs)');
     } else {
       Alert.alert("Registration Failed", result.error);
     }

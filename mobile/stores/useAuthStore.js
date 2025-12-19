@@ -6,29 +6,42 @@ export const useAuthStore = create((set) => ({
     token: null,
     isLoading: false,
     isCheckingAuth: true,
-    
+
     register: async (name, email, password, confirmPassword) => {
-        set({ isLoading: true })
+        set({ isLoading: true });
         try {
-            const response = await fetch(process.env.EXPO_PUBLIC_API_URL + "/api/auth/register", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ name, email, password, confirmPassword, device: "mobile" }),
-            })
-            const data = await response.json()
+            const response = await fetch(process.env.EXPO_PUBLIC_API_URL + "/api/auth/register",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        password,
+                        confirmPassword,
+                        device: "mobile",
+                    }),
+                }
+            );
+            const data = await response.json();
 
-            if(!response.ok) throw new Error(data.message || "Something went wrong")
+            if (!response.ok) {
+                throw new Error(data.message || "Registration failed");
+            }
 
-            set({ user: data.user, token: data.token })
-            await AsyncStorage.setItem("user", JSON.stringify(data.user))
-            await AsyncStorage.setItem("token", data.token)
-            return {success: true}
+            set({
+                user: data.user,
+                token: data.token,
+            });
+
+            await AsyncStorage.setItem("user", JSON.stringify(data.user));
+            await AsyncStorage.setItem("token", data.token);
+
+            return { success: true };
         } catch (error) {
-            return {error: error.message || "Something went wrong"}
+            return { error: error.message || "Something went wrong" };
         } finally {
-            set({ isLoading: false })
+            set({ isLoading: false });
         }
     },
 
@@ -44,14 +57,14 @@ export const useAuthStore = create((set) => ({
             })
             const data = await response.json()
 
-            if(!response.ok) throw new Error(data.message || "Something went wrong")
+            if (!response.ok) throw new Error(data.message || "Something went wrong")
 
             set({ user: data.user, token: data.token })
             await AsyncStorage.setItem("user", JSON.stringify(data.user))
             await AsyncStorage.setItem("token", data.token)
-            return {success: true}
+            return { success: true }
         } catch (error) {
-            return {error: error.message || "Something went wrong"}
+            return { error: error.message || "Something went wrong" }
         } finally {
             set({ isLoading: false })
         }
@@ -69,13 +82,13 @@ export const useAuthStore = create((set) => ({
             })
             const data = await response.json()
 
-            if(!response.ok) throw new Error(data.message || "Something went wrong")
+            if (!response.ok) throw new Error(data.message || "Something went wrong")
 
             set({ user: null, token: null })
             await AsyncStorage.removeItem("user")
             await AsyncStorage.removeItem("token")
         } catch (error) {
-            return {error: error.message || "Something went wrong"}
+            return { error: error.message || "Something went wrong" }
         } finally {
             set({ isLoading: false })
         }
@@ -90,7 +103,7 @@ export const useAuthStore = create((set) => ({
 
             set({ user: userInJson, token })
         } catch (error) {
-            return {error: error.message || "Something went wrong"}
+            return { error: error.message || "Something went wrong" }
         } finally {
             set({ isCheckingAuth: false })
         }

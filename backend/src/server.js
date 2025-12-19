@@ -16,7 +16,10 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 
 app.use("/api/auth", authRoutes)
 app.use("/api/admin", adminRoutes);
@@ -32,7 +35,7 @@ app.get("/api/health", (req, res) => {
 
 const startServer = async () => {
   await connectDB();
-  app.listen(ENV.PORT, () => {
+  app.listen(ENV.PORT, "0.0.0.0", () => {
     console.log("Server is up and running");
   });
 };
