@@ -3,7 +3,6 @@ import { ENV } from "../config/env.js";
 import jwt from "jsonwebtoken";
 
 export const protectRoute = async (req, res, next) => {
-  console.log("request received in protectRoute");
   let token;
 
   // WEB
@@ -17,7 +16,6 @@ export const protectRoute = async (req, res, next) => {
   }
 
   if (!token) {
-    console.log("no token found");
     return res.status(401).json({ message: "Unauthorized - no token found" });
   }
 
@@ -31,7 +29,6 @@ export const protectRoute = async (req, res, next) => {
     }
 
     req.user = user;
-    console.log("user", req.user);
     next();
   } catch (error) {
     return res.status(401).json({ message: "Unauthorized - invalid token" });

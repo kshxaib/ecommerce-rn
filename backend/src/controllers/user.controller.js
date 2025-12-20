@@ -115,7 +115,7 @@ export async function addToWishlist(req, res) {
     user.wishlist.push(productId);
     await user.save();
 
-    res.status(200).json({ message: "Product added to wishlist", wishlist: user.wishlist });
+    res.status(200).json({ message: "Product added to wishlist", wishlist: user.wishlist, wishlistCount: user.wishlist.length });
   } catch (error) {
     console.error("Error in addToWishlist controller:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -135,7 +135,7 @@ export async function removeFromWishlist(req, res) {
     user.wishlist.pull(productId);
     await user.save();
 
-    res.status(200).json({ message: "Product removed from wishlist", wishlist: user.wishlist });
+    res.status(200).json({ message: "Product removed from wishlist", wishlist: user.wishlist, wishlistCount: user.wishlist.length });
   } catch (error) {
     console.error("Error in removeFromWishlist controller:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -147,7 +147,7 @@ export async function getWishlist(req, res) {
     // we're using populate, bc wishlist is just an array of product ids
     const user = await User.findById(req.user._id).populate("wishlist");
 
-    res.status(200).json({ wishlist: user.wishlist });
+    res.status(200).json({ wishlist: user.wishlist, wishlistCount: user.wishlist.length });
   } catch (error) {
     console.error("Error in getWishlist controller:", error);
     res.status(500).json({ error: "Internal server error" });

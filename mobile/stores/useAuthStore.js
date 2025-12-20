@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { setAuthToken } from "../lib/axios";
 
 export const useAuthStore = create((set) => ({
     user: null,
@@ -101,7 +102,10 @@ export const useAuthStore = create((set) => ({
 
             const userInJson = user ? JSON.parse(user) : null
 
-            set({ user: userInJson, token })
+            if (userInJson && token) {
+                set({ user: userInJson, token })
+                setAuthToken(token)
+            }
         } catch (error) {
             return { error: error.message || "Something went wrong" }
         } finally {
