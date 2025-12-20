@@ -3,16 +3,11 @@ import { Product } from "../models/product.model.js";
 
 export async function getCart(req, res) {
   try {
-    let cart = await Cart.findOne({ user: req.user._id }).populate("items.product");
-
-    if (!cart) {
-      const user = req.user;
-
-      cart = await Cart.create({
-        user: user._id,
-        items: [],
-      });
-    }
+    const cart = await Cart.findOneAndUpdate(
+      { user: req.user._id },
+      { $setOnInsert: { items: [] } },
+      { new: true, upsert: true }
+    ).populate("items.product");
 
     res.status(200).json({ cart });
   } catch (error) {
@@ -35,16 +30,11 @@ export async function addToCart(req, res) {
       return res.status(400).json({ error: "Insufficient stock" });
     }
 
-    let cart = await Cart.findOne({ user: req.user._id });
-
-    if (!cart) {
-      const user = req.user;
-
-      cart = await Cart.create({
-        user: user._id,
-        items: [],
-      });
-    }
+    const cart = await Cart.findOneAndUpdate(
+      { user: req.user._id },
+      { $setOnInsert: { items: [] } },
+      { new: true, upsert: true }
+    ).populate("items.product");
 
     // check if item already in the cart
     const existingItem = cart.items.find((item) => item.product.toString() === productId);

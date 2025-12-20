@@ -3,6 +3,7 @@ import api from "../lib/axios"
 
 export const useWishlistStore = create((set, get) => ({
     wishlist: [],
+    wishlistData: [],
     wishlistCount: 0,
     isLoading: false,
     isAddingToWishlist: false,
@@ -12,9 +13,9 @@ export const useWishlistStore = create((set, get) => ({
         set({ isLoading: true });
         try {
             const { data } = await api.get("/api/users/wishlist");
-
             set({
-                wishlist: data.wishlist.map(p => p._id),
+                wishlist: data.wishlist.map(p => p._id),   // store IDs
+                wishlistData: data.wishlist,              // store full objects
                 wishlistCount: data.wishlistCount,
             });
         } finally {
@@ -25,12 +26,13 @@ export const useWishlistStore = create((set, get) => ({
     addToWishlist: async (productId) => {
         set({ isAddingToWishlist: true });
         try {
-            await api.post("/api/users/wishlist", { productId });
+            const { data } = await api.post("/api/users/wishlist", { productId });
 
-            set(state => ({
-                wishlist: [...state.wishlist, productId],
-                wishlistCount: state.wishlistCount + 1,
-            }));
+            set({
+                wishlist: data.wishlist.map(p => p._id),
+                wishlistData: data.wishlist,
+                wishlistCount: data.wishlistCount,
+            });
         } finally {
             set({ isAddingToWishlist: false });
         }
@@ -39,12 +41,13 @@ export const useWishlistStore = create((set, get) => ({
     removeFromWishlist: async (productId) => {
         set({ isRemovingFromWishlist: true });
         try {
-            await api.delete(`/api/users/wishlist/${productId}`);
+            const { data } = await api.delete(`/api/users/wishlist/${productId}`);
 
-            set(state => ({
-                wishlist: state.wishlist.filter(id => id !== productId),
-                wishlistCount: state.wishlistCount - 1,
-            }));
+            set({
+                wishlist: data.wishlist.map(p => p._id),
+                wishlistData: data.wishlist,
+                wishlistCount: data.wishlistCount,
+            });
         } finally {
             set({ isRemovingFromWishlist: false });
         }
@@ -56,7 +59,6 @@ export const useWishlistStore = create((set, get) => ({
 
     toggleWishlist: async (productId) => {
         const { isInWishlist, addToWishlist, removeFromWishlist } = get();
-
         if (isInWishlist(productId)) {
             await removeFromWishlist(productId);
         } else {
