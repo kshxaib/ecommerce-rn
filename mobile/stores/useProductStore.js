@@ -4,6 +4,7 @@ import api from "../lib/axios";
 export const useProductStore = create((set) => ({
     products: [],
     isLoading: false,
+    product: null,
 
     getAllProducts: async () => {
         set({ isLoading: true });
@@ -15,6 +16,22 @@ export const useProductStore = create((set) => ({
             return {
                 success: false,
                 error: error.response?.data?.message || "Failed to fetch products",
+            };
+        } finally {
+            set({ isLoading: false });
+        }
+    },
+
+    getProductById: async (id) => {
+        set({ isLoading: true });
+        try {
+            const { data } = await api.get(`/api/products/${id}`);
+            set({ product: data });
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.response?.data?.message || "Failed to fetch product",
             };
         } finally {
             set({ isLoading: false });
