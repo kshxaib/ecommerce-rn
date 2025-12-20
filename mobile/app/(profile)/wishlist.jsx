@@ -27,8 +27,12 @@ export default function WishlistScreen() {
       ]
     );
   }
-  const handleAddToCart = (productId) => {
-    addToCart(productId)
+  const handleAddToCart = async (productId, productName) => {
+    const result = await addToCart({ productId, quantity: 1 })
+    await removeFromWishlist(productId);
+    if (!result.success) {
+      Alert.alert("Failed", `Failed to add ${productName} in cart`)
+    }
   }
 
   if (isLoading) {
@@ -124,7 +128,7 @@ export default function WishlistScreen() {
                       <TouchableOpacity
                         className="bg-primary rounded-xl py-3 items-center"
                         activeOpacity={0.8}
-                        onPress={() => handleAddToCart(item._id)}
+                        onPress={() => handleAddToCart(item._id, item.name)}
                         disabled={isAddingToCart}
                       >
                         {isAddingToCart ? (
