@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { setAuthToken } from "../lib/axios";
+import api, { setAuthToken } from "../lib/axios";
 
 export const useAuthStore = create((set) => ({
     user: null,
@@ -11,105 +11,116 @@ export const useAuthStore = create((set) => ({
     register: async (name, email, password, confirmPassword) => {
         set({ isLoading: true });
         try {
-            const response = await fetch(process.env.EXPO_PUBLIC_API_URL + "/api/auth/register",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        name,
-                        email,
-                        password,
-                        confirmPassword,
-                        device: "mobile",
-                    }),
-                }
-            );
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || "Registration failed");
-            }
+            const { data } = await api.post("/api/auth/register", {
+                name,
+                email,
+                password,
+                confirmPassword,
+                device: "mobile",
+            });
 
             set({
                 user: data.user,
                 token: data.token,
             });
 
-            await AsyncStorage.setItem("user", JSON.stringify(data.user));
-            await AsyncStorage.setItem("token", data.token);
+            setAuthToken(data.token);
+
+            await AsyncStorage.multiSet([
+                ["user", JSON.stringify(data.user)],
+                ["token", data.token],
+            ]);
 
             return { success: true };
         } catch (error) {
-            return { error: error.message || "Something went wrong" };
+            return {
+                success: false,
+                error: error.response?.data?.message || "Registration failed",
+            };
         } finally {
             set({ isLoading: false });
         }
     },
 
     login: async (email, password) => {
-        set({ isLoading: true })
+        set({ isLoading: true });
         try {
-            const response = await fetch(process.env.EXPO_PUBLIC_API_URL + "/api/auth/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ email, password, device: "mobile" }),
-            })
-            const data = await response.json()
+            const { data } = await api.post("/api/auth/login", {
+                email,
+                password,
+                device: "mobile",
+            });
 
-            if (!response.ok) throw new Error(data.message || "Something went wrong")
+            set({
+                user: data.user,
+                token: data.token,
+            });
 
-            set({ user: data.user, token: data.token })
-            await AsyncStorage.setItem("user", JSON.stringify(data.user))
-            await AsyncStorage.setItem("token", data.token)
-            return { success: true }
+            setAuthToken(data.token);
+
+            await AsyncStorage.multiSet([
+                ["user", JSON.stringify(data.user)],
+                ["token", data.token],
+            ]);
+
+            return { success: true };
         } catch (error) {
-            return { error: error.message || "Something went wrong" }
+            return {
+                success: false,
+                error: error.response?.data?.message || "Login failed",
+            };
         } finally {
-            set({ isLoading: false })
+            set({ isLoading: false });
         }
     },
 
     logout: async () => {
-        set({ isLoading: true })
+        set({ isLoading: true });
         try {
-            const response = await fetch(process.env.EXPO_PUBLIC_API_URL + "/api/auth/logout", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ device: "mobile" }),
-            })
-            const data = await response.json()
+            await api.post("/api/auth/logout", {
+                device: "mobile",
+            });
 
-            if (!response.ok) throw new Error(data.message || "Something went wrong")
+            set({ user: null, token: null });
+            setAuthToken(null);
 
-            set({ user: null, token: null })
-            await AsyncStorage.removeItem("user")
-            await AsyncStorage.removeItem("token")
+            await AsyncStorage.multiRemove(["user", "token"]);
+
+            return { success: true };
         } catch (error) {
-            return { error: error.message || "Something went wrong" }
+            return {
+                success: false,
+                error: error.response?.data?.message || "Logout failed",
+            };
         } finally {
-            set({ isLoading: false })
+            set({ isLoading: false });
         }
     },
 
     checkAuth: async () => {
         try {
-            const token = await AsyncStorage.getItem("token")
-            const user = await AsyncStorage.getItem("user")
+            const [[, user], [, token]] = await AsyncStorage.multiGet([
+                "user",
+                "token",
+            ]);
 
-            const userInJson = user ? JSON.parse(user) : null
+            if (user && token) {
+                const parsedUser = JSON.parse(user);
 
-            if (userInJson && token) {
-                set({ user: userInJson, token })
-                setAuthToken(token)
+                set({
+                    user: parsedUser,
+                    token,
+                });
+
+                setAuthToken(token);
             }
         } catch (error) {
-            return { error: error.message || "Something went wrong" }
+            return {
+                success: false,
+                error: error.message || "Auth check failed",
+            };
         } finally {
-            set({ isCheckingAuth: false })
+            set({ isCheckingAuth: false });
         }
     },
-})) 
+}));

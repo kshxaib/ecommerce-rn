@@ -1,28 +1,23 @@
 import { create } from "zustand";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "../lib/axios";
 
 export const useProductStore = create((set) => ({
     products: [],
     isLoading: false,
 
     getAllProducts: async () => {
-        set({ isLoading: true })
+        set({ isLoading: true });
         try {
-            const token = await AsyncStorage.getItem("token");
-            const response = await fetch(process.env.EXPO_PUBLIC_API_URL + "/api/products", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            if (!response.ok) {
-                throw new Error("Failed to fetch products");
-            }
-            const data = await response.json()
-            set({ products: data })
+            const { data } = await api.get("/api/products");
+            set({ products: data });
+            return { success: true };
         } catch (error) {
-            return { error: error.message || "Something went wrong" };
+            return {
+                success: false,
+                error: error.response?.data?.message || "Failed to fetch products",
+            };
         } finally {
-            set({ isLoading: false })
+            set({ isLoading: false });
         }
-    }
+    },
 }));
