@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "../lib/axios";
 
 export const useCartStore = create((set, get) => ({
     cart: [],
@@ -11,108 +12,104 @@ export const useCartStore = create((set, get) => ({
     cartTotal: 0,
     cartItemCount: 0,
 
-    addToCart: async ({ productId, quantity = 1 }) => {
-        console.log("addToCart", productId, quantity)
-        set({ isAddingToCart: true })
+    getCart: async () => {
+        set({ isLoading: true });
         try {
-            const token = await AsyncStorage.getItem("token");
-            const response = await fetch(process.env.EXPO_PUBLIC_API_URL + `/api/cart`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ productId, quantity }),
-                method: "POST",
-            });
-            const data = await response.json()
-            if (!response.ok) {
-                throw new Error(data.message || "Something went wrong")
-            }
-            set({ cart: data.cart })
-            return { success: true }
-        } catch (error) {
-            return { error: error.message || "Something went wrong" }
+            const { data } = await api.get("/api/cart");
+            set({ cart: data.cart });
         } finally {
-            set({ isAddingToCart: false })
+            set({ isLoading: false });
+        }
+    },
+
+    addToCart: async ({ productId, quantity = 1 }) => {
+        set({ isAddingToCart: true });
+        try {
+            const { data } = await api.post("/api/cart", {
+                productId,
+                quantity,
+            });
+
+            set({ cart: data.cart });
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.response?.data?.message || "Something went wrong",
+            };
+        } finally {
+            set({ isAddingToCart: false });
         }
     },
 
     updateQuantity: async ({ productId, quantity }) => {
-        set({ isUpdating: true })
+        set({ isUpdating: true });
         try {
-            const token = await AsyncStorage.getItem("token");
-            const response = await fetch(process.env.EXPO_PUBLIC_API_URL + `/api/cart/${productId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ quantity }),
-                method: "PUT",
+            const { data } = await api.put(`/api/cart/${productId}`, {
+                quantity,
             });
-            const data = await response.json()
-            if (!response.ok) {
-                throw new Error(data.message || "Something went wrong")
-            }
-            set({ cart: data.cart })
-            return { success: true }
+
+            set({ cart: data.cart });
+            return { success: true };
         } catch (error) {
-            return { error: error.message || "Something went wrong" }
+            return {
+                success: false,
+                error: error.response?.data?.message || "Something went wrong",
+            };
         } finally {
-            set({ isUpdating: false })
+            set({ isUpdating: false });
         }
     },
 
     removeFromCart: async (productId) => {
-        set({ isRemovingFromCart: true })
+        set({ isRemovingFromCart: true });
         try {
-            const token = await AsyncStorage.getItem("token");
-            const response = await fetch(process.env.EXPO_PUBLIC_API_URL + `/api/cart/${productId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                method: "DELETE",
-            });
-            const data = await response.json()
-            if (!response.ok) {
-                throw new Error(data.message || "Something went wrong")
-            }
-            set({ cart: data.cart })
-            return { success: true }
+            const { data } = await api.delete(`/api/cart/${productId}`);
+            set({ cart: data.cart });
+            return { success: true };
         } catch (error) {
-            return { error: error.message || "Something went wrong" }
+            return {
+                success: false,
+                error: error.response?.data?.message || "Something went wrong",
+            };
         } finally {
-            set({ isRemovingFromCart: false })
+            set({ isRemovingFromCart: false });
         }
     },
 
     clearCart: async () => {
-        set({ isClearingCart: true })
+        set({ isClearingCart: true });
         try {
-            const token = await AsyncStorage.getItem("token");
-            const response = await fetch(process.env.EXPO_PUBLIC_API_URL + `/api/cart`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                method: "DELETE",
-            });
-            const data = await response.json()
-            if (!response.ok) {
-                throw new Error(data.message || "Something went wrong")
-            }
-            set({ cart: [] })
-            return { success: true }
+            await api.delete("/api/cart");
+            set({ cart: null });
+            return { success: true };
         } catch (error) {
-            return { error: error.message || "Something went wrong" }
+            return {
+                success: false,
+                error: error.response?.data?.message || "Something went wrong",
+            };
         } finally {
-            set({ isClearingCart: false })
+            set({ isClearingCart: false });
         }
     },
 
     cartTotal: () => {
-        const { cart } = get()
-        return cart?.items.reduce((total, item) => total + item.product.price * item.quantity, 0) ?? 0
+        const cart = get().cart;
+        return (
+            cart?.items?.reduce(
+                (total, item) => total + item.product.price * item.quantity,
+                0
+            ) ?? 0
+        );
     },
 
     cartItemCount: () => {
-        const { cart } = get()
-        return cart?.items.reduce((total, item) => total + item.quantity, 0) ?? 0
-    }
+        const cart = get().cart;
+        return (
+            cart?.items?.reduce(
+                (total, item) => total + item.quantity,
+                0
+            ) ?? 0
+        );
+    },
 })) 

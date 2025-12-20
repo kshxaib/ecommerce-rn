@@ -24,7 +24,6 @@ export async function getCart(req, res) {
 export async function addToCart(req, res) {
   try {
     const { productId, quantity = 1 } = req.body;
-    console.log("addToCart", productId, quantity)
 
     // validate product exists and has stock
     const product = await Product.findById(productId);
