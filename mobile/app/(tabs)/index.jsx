@@ -41,7 +41,6 @@ export default function ShopScreen() {
         getAllProducts();
     }, []);
 
-
     return (
         <ScrollView
             className="flex-1"

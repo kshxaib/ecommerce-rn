@@ -24,10 +24,19 @@ export const register = async (req, res) => {
             return res.status(400).json({ message: "User already exists" });
         }
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        const user = await User.create({ name, email, password: hashedPassword });
+        const imageUrl = `https://ui-avatars.com/api/?name=${name
+            .trim()
+            .charAt(0)
+            .toUpperCase()}&background=0D8ABC&color=fff&size=256`;
+
+        const user = await User.create({
+            name,
+            email,
+            password: hashedPassword,
+            imageUrl, // 🔥 avatar saved
+        });
 
         const token = generateToken(user._id);
 
@@ -39,19 +48,29 @@ export const register = async (req, res) => {
                 sameSite: "strict",
                 maxAge: 14 * 24 * 60 * 60 * 1000,
             });
-            console.log("token set in cookies");
+
             return res.status(201).json({
-                token,
                 message: "User registered successfully",
-                user: { id: user._id, name: user.name, email: user.email },
+                token,
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    imageUrl: user.imageUrl,
+                },
             });
         }
 
         // MOBILE
         return res.status(201).json({
             message: "User registered successfully",
-            user: { id: user._id, name: user.name, email: user.email },
             token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                imageUrl: user.imageUrl,
+            },
         });
     } catch (error) {
         console.error(error);
