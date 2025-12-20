@@ -1,4 +1,7 @@
 import { User } from "../models/user.model.js";
+import { Cart } from "../models/cart.model.js";
+import { Order } from "../models/order.model.js";
+import { Review } from "../models/review.model.js";
 
 export async function addAddress(req, res) {
   try {
@@ -179,9 +182,15 @@ export async function getUserProfile(req, res) {
 
 export async function deleteUserFromDB(req, res) {
   try {
-    const user = req.user;
-    await User.findByIdAndDelete(user._id);
-    res.status(200).json({ message: "User deleted successfully" });
+    const userId = req.user._id;
+
+    await Cart.deleteOne({ user: userId });
+    await Order.deleteMany({ user: userId });
+    await Review.deleteMany({ userId });
+
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({ message: "User and related data deleted successfully" });
   } catch (error) {
     console.error("Error in deleteUserFromDB controller:", error);
     res.status(500).json({ error: "Internal server error" });
