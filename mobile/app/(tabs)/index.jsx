@@ -15,35 +15,27 @@ const CATEGORIES = [
 export default function ShopScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All');
-
     const { getAllProducts, products, isLoading } = useProductStore()
 
     const filteredProducts = useMemo(() => {
         if (!products) return [];
-
         let filtered = products;
-
         if (selectedCategory !== "All") {
             filtered = filtered.filter((product) => product.category === selectedCategory);
         }
-
         if (searchQuery.trim()) {
             filtered = filtered.filter((product) =>
                 product.name.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
-
         return filtered;
     }, [products, selectedCategory, searchQuery])
 
-
-    useEffect(() => {
-        getAllProducts();
-    }, []);
+    useEffect(() => { getAllProducts(); }, []);
 
     return (
         <ScrollView
-            className="flex-1"
+            className="flex-1 bg-[#0B0B0B]"
             contentContainerStyle={{ paddingBottom: 100 }}
             showsVerticalScrollIndicator={false}
         >
@@ -51,22 +43,22 @@ export default function ShopScreen() {
             <View className="px-6 pb-6 pt-6">
                 <View className="flex-row items-center justify-between mb-6">
                     <View>
-                        <Text className="text-#FFFFFF text-3xl font-bold tracking-tight ">Shop</Text>
-                        <Text className="text-#B3B3B3 text-sm mt-1">Explore the best products</Text>
+                        <Text className="text-white text-3xl font-bold tracking-tight">Shop</Text>
+                        <Text className="text-gray-400 text-sm mt-1">Explore the best products</Text>
                     </View>
 
-                    <TouchableOpacity className="bg-#282828/50 p-3 rounded-full">
+                    <TouchableOpacity className="bg-[#282828]/50 p-3 rounded-full">
                         <Ionicons name='options-outline' size={22} color={"#fff"} />
                     </TouchableOpacity>
                 </View>
 
                 {/* SEARCH BAR */}
-                <View className="bg-#282828/50 flex-row items-center px-5 py-4 rounded-2xl">
+                <View className="bg-[#282828]/50 flex-row items-center px-5 py-4 rounded-2xl">
                     <Ionicons name='search' size={22} color={"#666"} />
                     <TextInput
                         placeholder="Search"
                         placeholderTextColor={"#666"}
-                        className="ml-3 flex-1 text-base text-#FFFFFF"
+                        className="ml-3 flex-1 text-base text-white"
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                     />
@@ -76,7 +68,7 @@ export default function ShopScreen() {
             {/* CATEGORY FILTER */}
             <View className="mb-6">
                 <ScrollView
-                    horizontal={true}
+                    horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ paddingHorizontal: 16 }}
                 >
@@ -86,15 +78,11 @@ export default function ShopScreen() {
                             <TouchableOpacity
                                 key={category.name}
                                 onPress={() => setSelectedCategory(category.name)}
-                                className={`mr-3 rounded-2xl size-20 overflow-hidden items-center justify-center ${isSelected ? "bg-#282828" : "bg-#282828/50"}`}
+                                className={`mr-3 rounded-2xl h-20 w-20 overflow-hidden items-center justify-center ${isSelected ? "bg-[#282828]" : "bg-[#282828]/50"}`}
                             >
-                                {
-                                    category.icon ? (
-                                        <Ionicons name={category.icon} size={36} color={isSelected ? "#121212" : "#fff"} />
-                                    ) : (
-                                        <Image source={category.image} className="size-12" resizeMode='contain' />
-                                    )
-                                }
+                                {category.icon
+                                    ? <Ionicons name={category.icon} size={36} color={isSelected ? "#1DB954" : "#fff"} />
+                                    : <Image source={category.image} className="h-12 w-12" resizeMode='contain' />}
                             </TouchableOpacity>
                         )
                     })}
@@ -103,8 +91,8 @@ export default function ShopScreen() {
 
             <View className="px-6 mb-6">
                 <View className="flex-row items-center justify-between mb-4">
-                    <Text className="text-#FFFFFF text-lg font-bold">Products</Text>
-                    <Text className="text-#B3B3B3 text-sm">{products.length} items</Text>
+                    <Text className="text-white text-lg font-bold">Products</Text>
+                    <Text className="text-gray-400 text-sm">{products.length} items</Text>
                 </View>
 
                 {/* PRODUCTS GRID */}
@@ -112,4 +100,4 @@ export default function ShopScreen() {
             </View>
         </ScrollView>
     )
-} 
+}

@@ -1,9 +1,16 @@
-import { View, Text, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native'
-import React, { useState } from 'react'
-import { router } from 'expo-router'
-import Ionicons from '@expo/vector-icons/Ionicons'
-import api from "../../lib/axios"
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    ScrollView,
+    Switch,
+    Alert,
+} from "react-native";
+import React, { useState } from "react";
+import { router } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import api from "../../lib/axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function PrivacySecurityScreen() {
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
@@ -12,8 +19,8 @@ export default function PrivacySecurityScreen() {
     const [emailNotifications, setEmailNotifications] = useState(true);
     const [marketingEmails, setMarketingEmails] = useState(false);
     const [shareData, setShareData] = useState(false);
-
     const [isDeleting, setIsDeleting] = useState(false);
+
     const submitDeleteAccount = async () => {
         try {
             setIsDeleting(true);
@@ -22,93 +29,25 @@ export default function PrivacySecurityScreen() {
             await api.delete("/api/users/profile");
             router.replace("/(auth)");
         } catch (error) {
-            Alert.alert("Error", error.response.data.message);
+            Alert.alert(
+                "Error",
+                error?.response?.data?.message || "Something went wrong"
+            );
         } finally {
             setIsDeleting(false);
         }
-    }
+    };
 
-    const securitySettings = [
-        {
-            id: "password",
-            icon: "lock-closed-outline",
-            title: "Change Password",
-            description: "Update your account password",
-            type: "navigation",
-        },
-        {
-            id: "two-factor",
-            icon: "shield-checkmark-outline",
-            title: "Two-Factor Authentication",
-            description: "Add an extra layer of security",
-            type: "toggle",
-            value: twoFactorEnabled,
-        },
-        {
-            id: "biometric",
-            icon: "finger-print-outline",
-            title: "Biometric Login",
-            description: "Use Face ID or Touch ID",
-            type: "toggle",
-            value: biometricEnabled,
-        },
-    ];
-
-    const privacySettings = [
-        {
-            id: "push",
-            icon: "notifications-outline",
-            title: "Push Notifications",
-            description: "Receive push notifications",
-            type: "toggle",
-            value: pushNotifications,
-        },
-        {
-            id: "email",
-            icon: "mail-outline",
-            title: "Email Notifications",
-            description: "Receive order updates via email",
-            type: "toggle",
-            value: emailNotifications,
-        },
-        {
-            id: "marketing",
-            icon: "megaphone-outline",
-            title: "Marketing Emails",
-            description: "Receive promotional emails",
-            type: "toggle",
-            value: marketingEmails,
-        },
-        {
-            id: "data",
-            icon: "analytics-outline",
-            title: "Share Usage Data",
-            description: "Help us improve the app",
-            type: "toggle",
-            value: shareData,
-        },
-    ];
-
-    const accountSettings = [
-        {
-            id: "activity",
-            icon: "time-outline",
-            title: "Account Activity",
-            description: "View recent login activity",
-        },
-        {
-            id: "devices",
-            icon: "phone-portrait-outline",
-            title: "Connected Devices",
-            description: "Manage devices with access",
-        },
-        {
-            id: "data-download",
-            icon: "download-outline",
-            title: "Download Your Data",
-            description: "Get a copy of your data",
-        },
-    ];
+    const handleDeleteAccount = () => {
+        Alert.alert(
+            "Delete Account",
+            "This action cannot be undone.",
+            [
+                { text: "Cancel", style: "cancel" },
+                { text: "Delete", style: "destructive", onPress: submitDeleteAccount },
+            ]
+        );
+    };
 
     const handleToggle = (id, value) => {
         switch (id) {
@@ -133,168 +72,178 @@ export default function PrivacySecurityScreen() {
         }
     };
 
-
-    const handleDeleteAccount = async () => {
-        try {
-            Alert.alert(
-                "Delete Account",
-                "Are you sure you want to delete your account? This action cannot be undone.",
-                [
-                    {
-                        text: "Cancel",
-                        style: "cancel",
-                    },
-                    {
-                        text: "Delete",
-                        onPress: () => submitDeleteAccount()
-                    },
-                ]
-            );
-        } catch (error) {
-
-        }
-    };
-
     return (
-        <>
-            <View className="px-6 pb-5 border-b border-surface flex-row items-center">
-                <TouchableOpacity onPress={() => router.back()} className="mr-4">
-                    <Ionicons name="arrow-back" size={28} color="#fff" />
+        <View className="flex-1 bg-black">
+            {/* HEADER */}
+            <View className="px-5 py-4 flex-row items-center border-b border-zinc-800">
+                <TouchableOpacity onPress={() => router.back()} className="mr-3">
+                    <Ionicons name="arrow-back" size={26} color="#fff" />
                 </TouchableOpacity>
-                <Text className="text-text-primary text-2xl font-bold">Privacy & Security</Text>
+                <Text className="text-white text-xl font-bold">
+                    Privacy & Security
+                </Text>
             </View>
 
             <ScrollView
-                className="flex-1"
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 80 }}
+                contentContainerStyle={{ paddingBottom: 100 }}
             >
-                {/* SECURITY SETTING */}
-                <View className="px-6 pt-6">
-                    <Text className="text-text-primary text-lg font-bold mb-4">Security</Text>
+                {/* SECURITY */}
+                <View className="px-5 mt-6">
+                    <Text className="text-white text-lg font-bold mb-3">
+                        Security
+                    </Text>
 
-                    {securitySettings.map((setting) => (
-                        <TouchableOpacity
-                            key={setting.id}
-                            className="bg-surface rounded-2xl p-4 mb-3"
-                            activeOpacity={setting.type === "toggle" ? 1 : 0.7}
-                        >
-                            <View className="flex-row items-center">
-                                <View className="bg-primary/20 rounded-full w-12 h-12 items-center justify-center mr-4">
-                                    <Ionicons name={setting.icon} size={24} color="#1DB954" />
-                                </View>
-
-                                <View className="flex-1">
-                                    <Text className="text-text-primary font-bold text-base mb-1">
-                                        {setting.title}
-                                    </Text>
-                                    <Text className="text-text-secondary text-sm">{setting.description}</Text>
-                                </View>
-
-                                {setting.type === "toggle" ? (
-                                    <Switch
-                                        value={setting.value}
-                                        onValueChange={(value) => handleToggle(setting.id, value)}
-                                        thumbColor="#FFFFFF"
-                                        trackColor={{ false: "#2A2A2A", true: "#1DB954" }}
-
-                                    // ios_backgroundColor={"purple"}
-                                    />
-                                ) : (
-                                    <Ionicons name="chevron-forward" size={20} color="#666" />
-                                )}
+                    <View className="bg-zinc-900 rounded-2xl overflow-hidden">
+                        {/* CHANGE PASSWORD */}
+                        <TouchableOpacity className="flex-row items-center px-4 py-4 border-b border-zinc-800">
+                            <Ionicons name="lock-closed-outline" size={22} color="#22c55e" />
+                            <View className="ml-4 flex-1">
+                                <Text className="text-white font-semibold">
+                                    Change Password
+                                </Text>
+                                <Text className="text-zinc-400 text-sm">
+                                    Update your account password
+                                </Text>
                             </View>
+                            <Ionicons name="chevron-forward" size={18} color="#777" />
                         </TouchableOpacity>
-                    ))}
-                </View>
 
-                {/* Privacy Section */}
-                <View className="px-6 pt-4">
-                    <Text className="text-text-primary text-lg font-bold mb-4">Privacy</Text>
-
-                    {privacySettings.map((setting) => (
-                        <View key={setting.id}>
-                            <View className="bg-surface rounded-2xl p-4 mb-3">
-                                <View className="flex-row items-center">
-                                    <View className="bg-primary/20 rounded-full w-12 h-12 items-center justify-center mr-4">
-                                        <Ionicons name={setting.icon} size={24} color="#1DB954" />
-                                    </View>
-                                    <View className="flex-1">
-                                        <Text className="text-text-primary font-bold text-base mb-1">
-                                            {setting.title}
-                                        </Text>
-                                        <Text className="text-text-secondary text-sm">{setting.description}</Text>
-                                    </View>
-                                    <Switch
-                                        value={setting.value}
-                                        onValueChange={(value) => handleToggle(setting.id, value)}
-                                        trackColor={{ false: "#2A2A2A", true: "#1DB954" }}
-                                        thumbColor="#FFFFFF"
-                                    />
-                                </View>
+                        {/* 2FA */}
+                        <View className="flex-row items-center px-4 py-4 border-b border-zinc-800">
+                            <Ionicons name="shield-checkmark-outline" size={22} color="#22c55e" />
+                            <View className="ml-4 flex-1">
+                                <Text className="text-white font-semibold">
+                                    Two-Factor Authentication
+                                </Text>
+                                <Text className="text-zinc-400 text-sm">
+                                    Extra layer of security
+                                </Text>
                             </View>
+                            <Switch
+                                value={twoFactorEnabled}
+                                onValueChange={(v) => handleToggle("two-factor", v)}
+                                trackColor={{ false: "#27272a", true: "#22c55e" }}
+                                thumbColor="#fff"
+                            />
                         </View>
-                    ))}
-                </View>
 
-                {/* ACCOUNT SECTION */}
-                <View className="px-6 pt-4">
-                    <Text className="text-text-primary text-lg font-bold mb-4">Account</Text>
-
-                    {accountSettings.map((setting) => (
-                        <TouchableOpacity
-                            key={setting.id}
-                            className="bg-surface rounded-2xl p-4 mb-3"
-                            activeOpacity={0.7}
-                        >
-                            <View className="flex-row items-center">
-                                <View className="bg-primary/20 rounded-full w-12 h-12 items-center justify-center mr-4">
-                                    <Ionicons name={setting.icon} size={24} color="#1DB954" />
-                                </View>
-                                <View className="flex-1">
-                                    <Text className="text-text-primary font-bold text-base mb-1">
-                                        {setting.title}
-                                    </Text>
-                                    <Text className="text-text-secondary text-sm">{setting.description}</Text>
-                                </View>
-                                <Ionicons name="chevron-forward" size={20} color="#666" />
+                        {/* BIOMETRIC */}
+                        <View className="flex-row items-center px-4 py-4">
+                            <Ionicons name="finger-print-outline" size={22} color="#22c55e" />
+                            <View className="ml-4 flex-1">
+                                <Text className="text-white font-semibold">
+                                    Biometric Login
+                                </Text>
+                                <Text className="text-zinc-400 text-sm">
+                                    Use fingerprint or face ID
+                                </Text>
                             </View>
-                        </TouchableOpacity>
-                    ))}
+                            <Switch
+                                value={biometricEnabled}
+                                onValueChange={(v) => handleToggle("biometric", v)}
+                                trackColor={{ false: "#27272a", true: "#22c55e" }}
+                                thumbColor="#fff"
+                            />
+                        </View>
+                    </View>
                 </View>
 
-                {/* DELETE ACC BTN */}
-                <View className="px-6 pt-4">
+                {/* PRIVACY */}
+                <View className="px-5 mt-6">
+                    <Text className="text-white text-lg font-bold mb-3">
+                        Privacy
+                    </Text>
+
+                    <View className="bg-zinc-900 rounded-2xl overflow-hidden">
+                        {[
+                            {
+                                id: "push",
+                                title: "Push Notifications",
+                                desc: "Receive app notifications",
+                                value: pushNotifications,
+                                icon: "notifications-outline",
+                            },
+                            {
+                                id: "email",
+                                title: "Email Notifications",
+                                desc: "Order & account updates",
+                                value: emailNotifications,
+                                icon: "mail-outline",
+                            },
+                            {
+                                id: "marketing",
+                                title: "Marketing Emails",
+                                desc: "Offers & promotions",
+                                value: marketingEmails,
+                                icon: "megaphone-outline",
+                            },
+                            {
+                                id: "data",
+                                title: "Share Usage Data",
+                                desc: "Help improve the app",
+                                value: shareData,
+                                icon: "analytics-outline",
+                            },
+                        ].map((item, index, arr) => (
+                            <View
+                                key={item.id}
+                                className={`flex-row items-center px-4 py-4 ${index !== arr.length - 1
+                                    ? "border-b border-zinc-800"
+                                    : ""
+                                    }`}
+                            >
+                                <Ionicons name={item.icon} size={22} color="#22c55e" />
+                                <View className="ml-4 flex-1">
+                                    <Text className="text-white font-semibold">
+                                        {item.title}
+                                    </Text>
+                                    <Text className="text-zinc-400 text-sm">
+                                        {item.desc}
+                                    </Text>
+                                </View>
+                                <Switch
+                                    value={item.value}
+                                    onValueChange={(v) => handleToggle(item.id, v)}
+                                    trackColor={{ false: "#27272a", true: "#22c55e" }}
+                                    thumbColor="#fff"
+                                />
+                            </View>
+                        ))}
+                    </View>
+                </View>
+
+                {/* DELETE ACCOUNT */}
+                <View className="px-5 mt-8">
                     <TouchableOpacity
-                        className="bg-surface rounded-2xl p-5 flex-row items-center justify-between border-2 border-red-500/20"
-                        activeOpacity={0.7}
                         disabled={isDeleting}
                         onPress={handleDeleteAccount}
+                        className="bg-red-500/10 border border-red-500/30 rounded-2xl px-4 py-5 flex-row items-center"
                     >
-                        <View className="flex-row items-center">
-                            <View className="bg-red-500/20 rounded-full w-12 h-12 items-center justify-center mr-4">
-                                <Ionicons name="trash-outline" size={24} color="#EF4444" />
-                            </View>
-                            <View>
-                                <Text className="text-red-500 font-bold text-base mb-1">Delete Account</Text>
-                                <Text className="text-text-secondary text-sm">Permanently delete your account</Text>
-                            </View>
+                        <Ionicons name="trash-outline" size={22} color="#ef4444" />
+                        <View className="ml-4 flex-1">
+                            <Text className="text-red-500 font-bold">
+                                Delete Account
+                            </Text>
+                            <Text className="text-zinc-400 text-sm">
+                                Permanently remove your account
+                            </Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color="#EF4444" />
+                        <Ionicons name="chevron-forward" size={18} color="#ef4444" />
                     </TouchableOpacity>
                 </View>
-
-                {/* INFO ALERT */}
                 <View className="px-6 pt-6 pb-4">
-                    <View className="bg-primary/10 rounded-2xl p-4 flex-row">
+                    <View className="rounded-2xl p-4 flex-row">
                         <Ionicons name="information-circle-outline" size={24} color="#1DB954" />
-                        <Text className="text-text-secondary text-sm ml-3 flex-1">
+                        <Text className="text-zinc-400 text-sm ml-3 flex-1">
                             We take your privacy seriously. Your data is encrypted and stored securely. You can
                             manage your privacy settings at any time.
                         </Text>
                     </View>
                 </View>
             </ScrollView>
-        </>
-    )
+        </View>
+    );
 }
+
+

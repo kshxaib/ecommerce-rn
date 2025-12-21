@@ -1,20 +1,42 @@
 import { View, Text, ActivityIndicator, TouchableOpacity, ScrollView, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useAddressStore } from '../../stores/useAddressStore'
-import AddressesHeader from '../../components/AddressesHeader';
-import { Ionicons } from '@expo/vector-icons';
-import AddressFormModal from '../../components/AddressFormModal';
-import AddressCard from '../../components/AddressCard';
-
+import AddressesHeader from '../../components/AddressesHeader'
+import { Ionicons } from '@expo/vector-icons'
+import AddressFormModal from '../../components/AddressFormModal'
+import AddressCard from '../../components/AddressCard'
 
 export default function AddressesScreen() {
-    const [showAddressForm, setShowAddressForm] = useState(false);
-    const [editingAddressId, setEditingAddressId] = useState(null);
-    const [addressForm, setAddressForm] = useState({ label: "", fullName: "", streetAddress: "", city: "", state: "", zipCode: "", phoneNumber: "", isDefault: false, });
+    const [showAddressForm, setShowAddressForm] = useState(false)
+    const [editingAddressId, setEditingAddressId] = useState(null)
+    const [addressForm, setAddressForm] = useState({
+        label: "",
+        fullName: "",
+        streetAddress: "",
+        city: "",
+        state: "",
+        zipCode: "",
+        phoneNumber: "",
+        isDefault: false,
+    })
 
-    const { addresses, getAddresses, addAddress, updateAddress, deleteAddress, isLoading, isAdding, isDeleting, isUpdating } = useAddressStore()
+    const {
+        addresses,
+        getAddresses,
+        addAddress,
+        updateAddress,
+        deleteAddress,
+        isLoading,
+        isAdding,
+        isDeleting,
+        isUpdating,
+    } = useAddressStore()
 
-    const handleAddAddress = async () => {
+    useEffect(() => {
+        getAddresses()
+    }, [])
+
+    const handleAddAddress = () => {
         setShowAddressForm(true)
         setEditingAddressId(null)
         setAddressForm({
@@ -26,12 +48,12 @@ export default function AddressesScreen() {
             zipCode: "",
             phoneNumber: "",
             isDefault: false,
-        });
+        })
     }
 
-    const handleEditAddress = async (address) => {
-        setShowAddressForm(true);
-        setEditingAddressId(address._id);
+    const handleEditAddress = (address) => {
+        setShowAddressForm(true)
+        setEditingAddressId(address._id)
         setAddressForm({
             label: address.label,
             fullName: address.fullName,
@@ -41,24 +63,18 @@ export default function AddressesScreen() {
             zipCode: address.zipCode,
             phoneNumber: address.phoneNumber,
             isDefault: address.isDefault,
-        });
+        })
     }
 
-    const handleDeleteAddress = async (addressId, label) => {
+    const handleDeleteAddress = (addressId, label) => {
         Alert.alert(
             "Delete Address",
             `Are you sure you want to delete ${label}?`,
             [
-                {
-                    text: "Cancel",
-                    style: "cancel",
-                },
-                {
-                    text: "Delete",
-                    onPress: () => deleteAddress(addressId),
-                },
+                { text: "Cancel", style: "cancel" },
+                { text: "Delete", onPress: () => deleteAddress(addressId) },
             ]
-        );
+        )
     }
 
     const handleSaveAddress = async () => {
@@ -71,19 +87,19 @@ export default function AddressesScreen() {
             !addressForm.zipCode ||
             !addressForm.phoneNumber
         ) {
-            Alert.alert("Error", "Please fill in all fields");
-            return;
+            Alert.alert("Error", "Please fill in all fields")
+            return
         }
 
         if (editingAddressId) {
             await updateAddress(editingAddressId, addressForm)
             setShowAddressForm(false)
             setEditingAddressId(null)
-            Alert.alert("Success", "Address updated successfully");
+            Alert.alert("Success", "Address updated successfully")
         } else {
             await addAddress(addressForm)
             setShowAddressForm(false)
-            Alert.alert("Success", "Address added successfully");
+            Alert.alert("Success", "Address added successfully")
         }
     }
 
@@ -99,54 +115,67 @@ export default function AddressesScreen() {
     return (
         <>
             <AddressesHeader />
-            {
-                addresses.length === 0 ? (
-                    <View className="flex-1 items-center justify-center px-6">
-                        <Ionicons name="location-outline" size={80} color="#666" />
-                        <Text className="text-text-primary font-semibold text-xl mt-4">No addresses yet</Text>
-                        <Text className="text-text-secondary text-center mt-2">
-                            Add your first delivery address
+
+            {addresses.length === 0 ? (
+                <View className="flex-1 bg-[#0B0B0B] items-center justify-center px-6">
+                    <Ionicons name="location-outline" size={80} color="#666" />
+
+                    <Text className="text-white font-semibold text-xl mt-4">
+                        No addresses yet
+                    </Text>
+
+                    <Text className="text-gray-400 text-center mt-2">
+                        Add your first delivery address
+                    </Text>
+
+                    <TouchableOpacity
+                        className="bg-[#22C55E] rounded-2xl px-8 py-4 mt-6"
+                        activeOpacity={0.8}
+                        onPress={handleAddAddress}
+                    >
+                        <Text className="text-black font-bold text-base">
+                            Add Address
                         </Text>
+                    </TouchableOpacity>
+                </View>
+            ) : (
+                <ScrollView
+                    className="flex-1 bg-[#0B0B0B]"
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: 100 }}
+                >
+                    <View className="px-6 py-4">
+                        {addresses.map((address) => (
+                            <AddressCard
+                                key={address._id}
+                                address={address}
+                                onEdit={handleEditAddress}
+                                onDelete={handleDeleteAddress}
+                                isUpdatingAddress={isUpdating}
+                                isDeletingAddress={isDeleting}
+                            />
+                        ))}
+
                         <TouchableOpacity
-                            className="bg-primary rounded-2xl px-8 py-4 mt-6"
+                            className="bg-[#22C55E] rounded-2xl py-4 items-center mt-4"
                             activeOpacity={0.8}
                             onPress={handleAddAddress}
                         >
-                            <Text className="text-background font-bold text-base">Add Address</Text>
+                            <View className="flex-row items-center">
+                                <Ionicons
+                                    name="add-circle-outline"
+                                    size={24}
+                                    color="#000"
+                                />
+                                <Text className="text-black font-bold text-base ml-2">
+                                    Add New Address
+                                </Text>
+                            </View>
                         </TouchableOpacity>
                     </View>
-                ) : (
-                    <ScrollView
-                        className="flex-1"
-                        showsVerticalScrollIndicator={false}
-                        contentContainerStyle={{ paddingBottom: 100 }}
-                    >
-                        <View className="px-6 py-4">
-                            {addresses.map((address) => (
-                                <AddressCard
-                                    key={address._id}
-                                    address={address}
-                                    onEdit={handleEditAddress}
-                                    onDelete={handleDeleteAddress}
-                                    isUpdatingAddress={isUpdating}
-                                    isDeletingAddress={isDeleting}
-                                />
-                            ))}
+                </ScrollView>
+            )}
 
-                            <TouchableOpacity
-                                className="bg-primary rounded-2xl py-4 items-center mt-2"
-                                activeOpacity={0.8}
-                                onPress={handleAddAddress}
-                            >
-                                <View className="flex-row items-center">
-                                    <Ionicons name="add-circle-outline" size={24} color="#121212" />
-                                    <Text className="text-background font-bold text-base ml-2">Add New Address</Text>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-                    </ScrollView>
-                )
-            }
             <AddressFormModal
                 visible={showAddressForm}
                 isEditing={!!editingAddressId}
@@ -165,10 +194,12 @@ function LoadingUI() {
     return (
         <>
             <AddressesHeader />
-            <View className="flex-1 items-center justify-center px-6">
-                <ActivityIndicator size="large" color="#00D9FF" />
-                <Text className="text-text-secondary mt-4">Loading addresses...</Text>
+            <View className="flex-1 bg-[#0B0B0B] items-center justify-center px-6">
+                <ActivityIndicator size="large" color="#22C55E" />
+                <Text className="text-gray-400 mt-4">
+                    Loading addresses...
+                </Text>
             </View>
         </>
-    );
+    )
 }
