@@ -17,7 +17,8 @@ export default function CartScreen() {
         isLoading,
         cart,
         cartTotal,
-        cartItemCount
+        cartItemCount,
+        clearCart
     } = useCartStore();
 
     const { addresses, getAddresses } = useAddressStore();
@@ -64,6 +65,12 @@ export default function CartScreen() {
             return;
         }
         setAddressModalVisible(true)
+    }
+
+    const handleProceedWithPayment = async (selectedAddress) => {
+        setAddressModalVisible(false)
+
+        Alert.alert("Payment", "Payment is not implemented yet")
     }
 
     useEffect(() => {
@@ -191,7 +198,7 @@ export default function CartScreen() {
             <AddressSelectionModal
                 visible={addressModalVisible}
                 onClose={() => setAddressModalVisible(false)}
-                onProceed={() => { }}
+                onProceed={handleProceedWithPayment}
                 isProcessing={paymentLoading}
             />
         </>

@@ -56,6 +56,7 @@ export async function createRazorpayOrder(req, res) {
         });
 
         res.status(200).json({
+            success: true,
             razorpayOrderId: razorpayOrder.id,
             amount: razorpayOrder.amount,
             validatedItems,

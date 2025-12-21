@@ -7,6 +7,8 @@ export async function payWithRazorpay(cartItems, shippingAddress) {
         shippingAddress,
     });
 
+    if (!data.success) throw new Error(data.message || "Failed to create order")
+
     const options = {
         key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID,
         amount: data.amount,
@@ -24,7 +26,9 @@ export async function payWithRazorpay(cartItems, shippingAddress) {
         orderData: {
             items: data.validatedItems,
             shippingAddress: data.shippingAddress,
-            total: data.total,
+            total: data.grandTotal,
         },
     });
+
+    return { success: true }
 }
