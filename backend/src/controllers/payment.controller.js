@@ -1,151 +1,120 @@
-// import Stripe from "stripe";
-// import { ENV } from "../config/env.js";
-// import { User } from "../models/user.model.js";
-// import { Product } from "../models/product.model.js";
-// import { Order } from "../models/order.model.js";
-// import { Cart } from "../models/cart.model.js";
+import crypto from "crypto";
+import { ENV } from "../config/env.js";
+import { User } from "../models/user.model.js";
+import { Product } from "../models/product.model.js";
+import { Order } from "../models/order.model.js";
+import { Cart } from "../models/cart.model.js";
+import { razorpay } from "../config/razorpay.js"
 
-// const stripe = new Stripe(ENV.STRIPE_SECRET_KEY);
+export async function createRazorpayOrder(req, res) {
+    try {
+        const { cartItems, shippingAddress } = req.body;
+        const user = req.user;
 
-// export async function createPaymentIntent(req, res) {
-//   try {
-//     const { cartItems, shippingAddress } = req.body;
-//     const user = req.user;
+        if (!cartItems || cartItems.length === 0) {
+            return res.status(400).json({ message: "Cart is empty" });
+        }
 
-//     // Validate cart items
-//     if (!cartItems || cartItems.length === 0) {
-//       return res.status(400).json({ error: "Cart is empty" });
-//     }
+        let total = 0;
+        const validatedItems = [];
 
-//     // Calculate total from server-side (don't trust client - ever.)
-//     let subtotal = 0;
-//     const validatedItems = [];
+        for (const item of cartItems) {
+            const product = await Product.findById(item.product._id);
+            if (!product) {
+                return res.status(404).json({ message: "Product not found" });
+            }
 
-//     for (const item of cartItems) {
-//       const product = await Product.findById(item.product._id);
-//       if (!product) {
-//         return res.status(404).json({ error: `Product ${item.product.name} not found` });
-//       }
+            if (product.stock < item.quantity) {
+                return res
+                    .status(400)
+                    .json({ message: `Insufficient stock for ${product.name}` });
+            }
 
-//       if (product.stock < item.quantity) {
-//         return res.status(400).json({ error: `Insufficient stock for ${product.name}` });
-//       }
+            total += product.price * item.quantity;
 
-//       subtotal += product.price * item.quantity;
-//       validatedItems.push({
-//         product: product._id.toString(),
-//         name: product.name,
-//         price: product.price,
-//         quantity: item.quantity,
-//         image: product.images[0],
-//       });
-//     }
+            validatedItems.push({
+                product: product._id,
+                name: product.name,
+                price: product.price,
+                quantity: item.quantity,
+                image: product.images[0],
+            });
+        }
 
-//     const shipping = 10.0; // $10
-//     const tax = subtotal * 0.08; // 8%
-//     const total = subtotal + shipping + tax;
+        if (total <= 0) {
+            return res.status(400).json({ message: "Invalid order total" });
+        }
 
-//     if (total <= 0) {
-//       return res.status(400).json({ error: "Invalid order total" });
-//     }
+        const shipping = 10;
+        const tax = total * 0.08;
+        const grandTotal = total + shipping + tax;
 
-//     // find or create the stripe customer
-//     let customer;
-//     if (user.stripeCustomerId) {
-//       // find the customer
-//       customer = await stripe.customers.retrieve(user.stripeCustomerId);
-//     } else {
-//       // create the customer
-//       customer = await stripe.customers.create({
-//         email: user.email,
-//         name: user.name,
-//         metadata: {
-//           clerkId: user.clerkId,
-//           userId: user._id.toString(),
-//         },
-//       });
+        const razorpayOrder = await razorpay.orders.create({
+            amount: grandTotal * 100, // INR → paise
+            currency: "INR",
+            receipt: `receipt_${Date.now()}_${user._id}`,
+        });
 
-//       // add the stripe customer ID to the  user object in the DB
-//       await User.findByIdAndUpdate(user._id, { stripeCustomerId: customer.id });
-//     }
+        res.status(200).json({
+            razorpayOrderId: razorpayOrder.id,
+            amount: razorpayOrder.amount,
+            validatedItems,
+            shippingAddress,
+            grandTotal,
+        });
+    } catch (error) {
+        console.error("Create Razorpay order error:", error);
+        res.status(500).json({ message: "Failed to create order" });
+    }
+}
 
-//     // create payment intent
-//     const paymentIntent = await stripe.paymentIntents.create({
-//       amount: Math.round(total * 100), // convert to cents
-//       currency: "usd",
-//       customer: customer.id,
-//       automatic_payment_methods: {
-//         enabled: true,
-//       },
-//       metadata: {
-//         clerkId: user.clerkId,
-//         userId: user._id.toString(),
-//         orderItems: JSON.stringify(validatedItems),
-//         shippingAddress: JSON.stringify(shippingAddress),
-//         totalPrice: total.toFixed(2),
-//       },
-//       // in the webhooks section we will use this metadata
-//     });
+export async function verifyRazorpayPayment(req, res) {
+    try {
+        const {
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature,
+            orderData,
+        } = req.body;
 
-//     res.status(200).json({ clientSecret: paymentIntent.client_secret });
-//   } catch (error) {
-//     console.error("Error creating payment intent:", error);
-//     res.status(500).json({ error: "Failed to create payment intent" });
-//   }
-// }
+        const user = req.user;
 
-// export async function handleWebhook(req, res) {
-//   const sig = req.headers["stripe-signature"];
-//   let event;
+        const body = razorpay_order_id + "|" + razorpay_payment_id;
 
-//   try {
-//     event = stripe.webhooks.constructEvent(req.body, sig, ENV.STRIPE_WEBHOOK_SECRET);
-//   } catch (err) {
-//     console.error("Webhook signature verification failed:", err.message);
-//     return res.status(400).send(`Webhook Error: ${err.message}`);
-//   }
+        const expectedSignature = crypto
+            .createHmac("sha256", ENV.RAZORPAY_KEY_SECRET)
+            .update(body)
+            .digest("hex");
 
-//   if (event.type === "payment_intent.succeeded") {
-//     const paymentIntent = event.data.object;
+        if (expectedSignature !== razorpay_signature) {
+            return res.status(400).json({ message: "Payment verification failed" });
+        }
 
-//     console.log("Payment succeeded:", paymentIntent.id);
+        // ✅ Create Order
+        const order = await Order.create({
+            user: user._id,
+            orderItems: orderData.items,
+            shippingAddress: orderData.shippingAddress,
+            paymentResult: {
+                id: razorpay_payment_id,
+                status: "success",
+            },
+            totalPrice: orderData.total,
+        });
 
-//     try {
-//       const { userId, clerkId, orderItems, shippingAddress, totalPrice } = paymentIntent.metadata;
+        // 📉 Update stock
+        for (const item of orderData.items) {
+            await Product.findByIdAndUpdate(item.product, {
+                $inc: { stock: -item.quantity },
+            });
+        }
 
-//       // Check if order already exists (prevent duplicates)
-//       const existingOrder = await Order.findOne({ "paymentResult.id": paymentIntent.id });
-//       if (existingOrder) {
-//         console.log("Order already exists for payment:", paymentIntent.id);
-//         return res.json({ received: true });
-//       }
+        // 🧹 Clear cart
+        await Cart.findOneAndDelete({ user: user._id });
 
-//       // create order
-//       const order = await Order.create({
-//         user: userId,
-//         clerkId,
-//         orderItems: JSON.parse(orderItems),
-//         shippingAddress: JSON.parse(shippingAddress),
-//         paymentResult: {
-//           id: paymentIntent.id,
-//           status: "succeeded",
-//         },
-//         totalPrice: parseFloat(totalPrice),
-//       });
-
-//       // update product stock
-//       const items = JSON.parse(orderItems);
-//       for (const item of items) {
-//         await Product.findByIdAndUpdate(item.product, {
-//           $inc: { stock: -item.quantity },
-//         });
-//       }
-
-//       console.log("Order created successfully:", order._id);
-//     } catch (error) {
-//       console.error("Error creating order from webhook:", error);
-//     }
-//   }
-
-//   res.json({ received: true });
-// }
+        res.status(201).json({ message: "Payment verified", order });
+    } catch (error) {
+        console.error("Verify Razorpay error:", error);
+        res.status(500).json({ message: "Payment verification failed" });
+    }
+}

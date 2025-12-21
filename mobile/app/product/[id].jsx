@@ -1,4 +1,4 @@
-import { View, Text, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native'
+import { View, Text, ActivityIndicator, TouchableOpacity, ScrollView, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useLocalSearchParams } from 'expo-router'
 import { useProductStore } from '../../stores/useProductStore'
@@ -21,18 +21,32 @@ export default function ProductDetailScreen() {
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [quantity, setQuantity] = useState(1);
 
-    const handleAddToCart = async (productId, productName) => {
-        const result = await addToCart({ productId, quantity: 1 })
+    const handleAddToCart = async () => {
+        if (!product?._id) return;
+        const result = await addToCart({
+            productId: product._id,
+            quantity,
+        });
+
         if (!result.success) {
-            Alert.alert("Failed", `Failed to add ${productName} in cart`)
+            Alert.alert(
+                "Failed",
+                `Failed to add ${product?.name} to cart`
+            );
         }
-    }
+
+        Alert.alert(
+            "Success",
+            `Added ${product?.name} to cart`
+        );
+    };
 
     const inStock = product?.stock > 0;
 
     useEffect(() => {
         getProductById(id);
     }, [id]);
+
 
     if (isLoading || !product) return <LoadingUI />
 
@@ -49,9 +63,9 @@ export default function ProductDetailScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    className={`w-12 h-12 rounded-full items-center justify-center ${isInWishlist(product?._id) ? "bg-primary" : "bg-black/50 backdrop-blur-xl"
+                    className={`w-12 h-12 rounded-full items-center justify-center ${isInWishlist(id) ? "bg-primary" : "bg-black/50 backdrop-blur-xl"
                         }`}
-                    onPress={() => toggleWishlist(product?._id)}
+                    onPress={() => toggleWishlist(id)}
                     disabled={isAddingToWishlist || isRemovingFromWishlist}
                     activeOpacity={0.7}
                 >
@@ -59,9 +73,9 @@ export default function ProductDetailScreen() {
                         <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
                         <Ionicons
-                            name={isInWishlist(product._id) ? "heart" : "heart-outline"}
+                            name={isInWishlist(id) ? "heart" : "heart-outline"}
                             size={24}
-                            color={isInWishlist(product._id) ? "#121212" : "#FFFFFF"}
+                            color={isInWishlist(id) ? "#121212" : "#FFFFFF"}
                         />
                     )}
                 </TouchableOpacity>
@@ -83,7 +97,7 @@ export default function ProductDetailScreen() {
                             setSelectedImageIndex(index);
                         }}
                     >
-                        {product.images.map((image, index) => (
+                        {product?.images.map((image, index) => (
                             <View key={index} style={{ width }}>
                                 <Image source={image} style={{ width, height: 400 }} contentFit="cover" />
                             </View>
@@ -92,7 +106,7 @@ export default function ProductDetailScreen() {
 
                     {/* Image Indicators */}
                     <View className="absolute bottom-4 left-0 right-0 flex-row justify-center gap-2">
-                        {product.images.map((_, index) => (
+                        {product?.images.map((_, index) => (
                             <View
                                 key={index}
                                 className={`h-2 rounded-full ${index === selectedImageIndex ? "bg-primary w-6" : "bg-white/50 w-2"
@@ -107,27 +121,27 @@ export default function ProductDetailScreen() {
                     {/* Category */}
                     <View className="flex-row items-center mb-3">
                         <View className="bg-primary/20 px-3 py-1 rounded-full">
-                            <Text className="text-primary text-xs font-bold">{product.category}</Text>
+                            <Text className="text-primary text-xs font-bold">{product?.category}</Text>
                         </View>
                     </View>
 
                     {/* Product Name */}
-                    <Text className="text-text-primary text-3xl font-bold mb-3">{product.name}</Text>
+                    <Text className="text-text-primary text-3xl font-bold mb-3">{product?.name}</Text>
 
                     {/* Rating & Reviews */}
                     <View className="flex-row items-center mb-4">
                         <View className="flex-row items-center bg-surface px-3 py-2 rounded-full">
                             <Ionicons name="star" size={16} color="#FFC107" />
                             <Text className="text-text-primary font-bold ml-1 mr-2">
-                                {product.averageRating.toFixed(1)}
+                                {product?.averageRating.toFixed(1)}
                             </Text>
-                            <Text className="text-text-secondary text-sm">({product.totalReviews} reviews)</Text>
+                            <Text className="text-text-secondary text-sm">({product?.totalReviews} reviews)</Text>
                         </View>
                         {inStock ? (
                             <View className="ml-3 flex-row items-center">
                                 <View className="w-2 h-2 bg-green-500 rounded-full mr-2" />
                                 <Text className="text-green-500 font-semibold text-sm">
-                                    {product.stock} in stock
+                                    {product?.stock} in stock
                                 </Text>
                             </View>
                         ) : (
@@ -140,7 +154,7 @@ export default function ProductDetailScreen() {
 
                     {/* Price */}
                     <View className="flex-row items-center mb-6">
-                        <Text className="text-primary text-4xl font-bold">${product.price.toFixed(2)}</Text>
+                        <Text className="text-primary text-4xl font-bold">${product?.price.toFixed(2)}</Text>
                     </View>
 
                     {/* Quantity */}
@@ -161,19 +175,19 @@ export default function ProductDetailScreen() {
 
                             <TouchableOpacity
                                 className="bg-primary rounded-full w-12 h-12 items-center justify-center"
-                                onPress={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                                onPress={() => setQuantity(Math.min(product?.stock, quantity + 1))}
                                 activeOpacity={0.7}
-                                disabled={!inStock || quantity >= product.stock}
+                                disabled={!inStock || quantity >= product?.stock}
                             >
                                 <Ionicons
                                     name="add"
                                     size={24}
-                                    color={!inStock || quantity >= product.stock ? "#666" : "#121212"}
+                                    color={!inStock || quantity >= product?.stock ? "#666" : "#121212"}
                                 />
                             </TouchableOpacity>
                         </View>
 
-                        {quantity >= product.stock && inStock && (
+                        {quantity >= product?.stock && inStock && (
                             <Text className="text-orange-500 text-sm mt-2">Maximum stock reached</Text>
                         )}
                     </View>
@@ -182,7 +196,7 @@ export default function ProductDetailScreen() {
                 {/* Description */}
                 <View className="mb-8">
                     <Text className="text-text-primary text-lg font-bold mb-3">Description</Text>
-                    <Text className="text-text-secondary text-base leading-6">{product.description}</Text>
+                    <Text className="text-text-secondary text-base leading-6">{product?.description}</Text>
                 </View>
             </ScrollView>
 
@@ -192,7 +206,7 @@ export default function ProductDetailScreen() {
                     <View className="flex-1">
                         <Text className="text-text-secondary text-sm mb-1">Total Price</Text>
                         <Text className="text-primary text-2xl font-bold">
-                            ${(product.price * quantity).toFixed(2)}
+                            ${(product?.price * quantity).toFixed(2)}
                         </Text>
                     </View>
                     <TouchableOpacity

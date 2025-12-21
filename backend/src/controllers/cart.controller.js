@@ -11,7 +11,7 @@ export async function getCart(req, res) {
 
     res.status(200).json({ cart });
   } catch (error) {
-    console.error("Error in getCart controller:", error);
+    console.error("Error in getCart:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -20,7 +20,6 @@ export async function addToCart(req, res) {
   try {
     const { productId, quantity = 1 } = req.body;
 
-    // validate product exists and has stock
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
@@ -36,25 +35,29 @@ export async function addToCart(req, res) {
       { new: true, upsert: true }
     ).populate("items.product");
 
-    // check if item already in the cart
-    const existingItem = cart.items.find((item) => item.product.toString() === productId);
+    const existingItem = cart.items.find(
+      (item) => item.product._id.toString() === productId
+    );
+
     if (existingItem) {
-      // increment quantity by 1
-      const newQuantity = existingItem.quantity + 1;
+      const newQuantity = existingItem.quantity + quantity;
       if (product.stock < newQuantity) {
         return res.status(400).json({ error: "Insufficient stock" });
       }
       existingItem.quantity = newQuantity;
     } else {
-      // add new item
       cart.items.push({ product: productId, quantity });
     }
 
     await cart.save();
+    await cart.populate("items.product");
 
-    res.status(200).json({ message: "Item added to cart", cart });
+    res.status(200).json({
+      message: "Item added to cart",
+      cart,
+    });
   } catch (error) {
-    console.error("Error in addToCart controller:", error);
+    console.error("Error in addToCart:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -73,12 +76,14 @@ export async function updateCartItem(req, res) {
       return res.status(404).json({ error: "Cart not found" });
     }
 
-    const itemIndex = cart.items.findIndex((item) => item.product.toString() === productId);
-    if (itemIndex === -1) {
+    const item = cart.items.find(
+      (item) => item.product.toString() === productId
+    );
+
+    if (!item) {
       return res.status(404).json({ error: "Item not found in cart" });
     }
 
-    // check if product exists & validate stock
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
@@ -88,12 +93,16 @@ export async function updateCartItem(req, res) {
       return res.status(400).json({ error: "Insufficient stock" });
     }
 
-    cart.items[itemIndex].quantity = quantity;
+    item.quantity = quantity;
     await cart.save();
+    await cart.populate("items.product");
 
-    res.status(200).json({ message: "Cart updated successfully", cart });
+    res.status(200).json({
+      message: "Cart updated successfully",
+      cart,
+    });
   } catch (error) {
-    console.error("Error in updateCartItem controller:", error);
+    console.error("Error in updateCartItem:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -107,17 +116,24 @@ export async function removeFromCart(req, res) {
       return res.status(404).json({ error: "Cart not found" });
     }
 
-    cart.items = cart.items.filter((item) => item.product.toString() !== productId);
-    await cart.save();
+    cart.items = cart.items.filter(
+      (item) => item.product.toString() !== productId
+    );
 
-    res.status(200).json({ message: "Item removed from cart", cart });
+    await cart.save();
+    await cart.populate("items.product");
+
+    res.status(200).json({
+      message: "Item removed from cart",
+      cart,
+    });
   } catch (error) {
-    console.error("Error in removeFromCart controller:", error);
+    console.error("Error in removeFromCart:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
 
-export const clearCart = async (req, res) => {
+export async function clearCart(req, res) {
   try {
     const cart = await Cart.findOne({ user: req.user._id });
     if (!cart) {
@@ -126,10 +142,14 @@ export const clearCart = async (req, res) => {
 
     cart.items = [];
     await cart.save();
+    await cart.populate("items.product");
 
-    res.status(200).json({ message: "Cart cleared", cart });
+    res.status(200).json({
+      message: "Cart cleared",
+      cart,
+    });
   } catch (error) {
-    console.error("Error in clearCart controller:", error);
+    console.error("Error in clearCart:", error);
     res.status(500).json({ error: "Internal server error" });
   }
-};
+}

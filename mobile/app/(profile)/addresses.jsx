@@ -14,10 +14,6 @@ export default function AddressesScreen() {
 
     const { addresses, getAddresses, addAddress, updateAddress, deleteAddress, isLoading, isAdding, isDeleting, isUpdating } = useAddressStore()
 
-    useEffect(() => {
-        getAddresses()
-    }, [])
-
     const handleAddAddress = async () => {
         setShowAddressForm(true)
         setEditingAddressId(null)

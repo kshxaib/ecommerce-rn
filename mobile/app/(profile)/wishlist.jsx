@@ -33,6 +33,7 @@ export default function WishlistScreen() {
     if (!result.success) {
       Alert.alert("Failed", `Failed to add ${productName} in cart`)
     }
+    Alert.alert("Success", `Added ${productName} to cart`)
   }
 
   if (isLoading) {

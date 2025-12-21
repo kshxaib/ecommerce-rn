@@ -3,14 +3,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../lib/axios";
 
 export const useCartStore = create((set, get) => ({
-    cart: [],
+    cart: { items: [] },
     isLoading: false,
     isAddingToCart: false,
     isRemovingFromCart: false,
     isUpdating: false,
     isClearingCart: false,
-    cartTotal: 0,
-    cartItemCount: 0,
 
     getCart: async () => {
         set({ isLoading: true });
@@ -81,7 +79,7 @@ export const useCartStore = create((set, get) => ({
         set({ isClearingCart: true });
         try {
             await api.delete("/api/cart");
-            set({ cart: null });
+            set({ cart: { items: [] } });
             return { success: true };
         } catch (error) {
             return {
@@ -95,21 +93,21 @@ export const useCartStore = create((set, get) => ({
 
     cartTotal: () => {
         const cart = get().cart;
-        return (
-            cart?.items?.reduce(
-                (total, item) => total + item.product.price * item.quantity,
-                0
-            ) ?? 0
+        if (!cart || !Array.isArray(cart.items)) return 0;
+
+        return cart.items.reduce(
+            (total, item) => total + item.product.price * item.quantity,
+            0
         );
     },
 
     cartItemCount: () => {
         const cart = get().cart;
-        return (
-            cart?.items?.reduce(
-                (total, item) => total + item.quantity,
-                0
-            ) ?? 0
+        if (!cart || !Array.isArray(cart.items)) return 0;
+
+        return cart.items.reduce(
+            (total, item) => total + item.quantity,
+            0
         );
     },
 })) 
