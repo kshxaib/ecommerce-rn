@@ -7,7 +7,7 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import OrderSummary from "../../components/OrderSummary"
 import { router } from "expo-router";
 import AddressSelectionModal from '../../components/AddressSelectionModal'
-import { payWithRazorpay } from '../../lib/razorpay'
+
 
 export default function CartScreen() {
     const {
@@ -70,31 +70,32 @@ export default function CartScreen() {
     }
 
     const handleProceedWithPayment = async (selectedAddress) => {
-        try {
-            setPaymentLoading(true);
-            setAddressModalVisible(false);
+        Alert.alert("Razorpay is on hold!")
+        // try {
+        //     setPaymentLoading(true);
+        //     setAddressModalVisible(false);
 
-            const result = await payWithRazorpay(cartItems, selectedAddress);
+        //     const result = await payWithRazorpay(cartItems, selectedAddress);
 
-            if (result?.success) {
-                await clearCart();
-                await getCart()
-                Alert.alert("Success", "Order placed successfully");
-            }
+        //     if (result?.success) {
+        //         await clearCart();
+        //         await getCart()
+        //         Alert.alert("Success", "Order placed successfully");
+        //     }
 
-            if (result.success === false) {
-                Alert.alert("Payment Failed", "Something went wrong");
-            }
-        } catch (error) {
-            console.error(error);
+        //     if (result.success === false) {
+        //         Alert.alert("Payment Failed", "Something went wrong");
+        //     }
+        // } catch (error) {
+        //     console.error(error);
 
-            Alert.alert(
-                "Payment Failed",
-                error?.message || "Something went wrong"
-            );
-        } finally {
-            setPaymentLoading(false);
-        }
+        //     Alert.alert(
+        //         "Payment Failed",
+        //         error?.message || "Something went wrong"
+        //     );
+        // } finally {
+        //     setPaymentLoading(false);
+        // }
     };
 
 
