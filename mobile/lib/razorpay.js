@@ -2,7 +2,7 @@ import RazorpayCheckout from "react-native-razorpay";
 import api from "./axios";
 
 export async function payWithRazorpay(cartItems, shippingAddress) {
-    const { data } = await api.post("/api/payments/create-order", {
+    const { data } = await api.post("/api/payment/create-order", {
         cartItems,
         shippingAddress,
     });
@@ -19,7 +19,7 @@ export async function payWithRazorpay(cartItems, shippingAddress) {
 
     const payment = await RazorpayCheckout.open(options);
 
-    await api.post("/api/payments/verify", {
+    await api.post("/api/payment/verify", {
         razorpay_order_id: payment.razorpay_order_id,
         razorpay_payment_id: payment.razorpay_payment_id,
         razorpay_signature: payment.razorpay_signature,

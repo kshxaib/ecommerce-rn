@@ -7,6 +7,7 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import OrderSummary from "../../components/OrderSummary"
 import { router } from "expo-router";
 import AddressSelectionModal from '../../components/AddressSelectionModal'
+import { payWithRazorpay } from '../../lib/razorpay'
 
 export default function CartScreen() {
     const {
@@ -18,7 +19,8 @@ export default function CartScreen() {
         cart,
         cartTotal,
         cartItemCount,
-        clearCart
+        clearCart,
+        getCart
     } = useCartStore();
 
     const { addresses, getAddresses } = useAddressStore();
@@ -68,10 +70,33 @@ export default function CartScreen() {
     }
 
     const handleProceedWithPayment = async (selectedAddress) => {
-        setAddressModalVisible(false)
+        try {
+            setPaymentLoading(true);
+            setAddressModalVisible(false);
 
-        Alert.alert("Payment", "Payment is not implemented yet")
-    }
+            const result = await payWithRazorpay(cartItems, selectedAddress);
+
+            if (result?.success) {
+                await clearCart();
+                await getCart()
+                Alert.alert("Success", "Order placed successfully");
+            }
+
+            if (result.success === false) {
+                Alert.alert("Payment Failed", "Something went wrong");
+            }
+        } catch (error) {
+            console.error(error);
+
+            Alert.alert(
+                "Payment Failed",
+                error?.message || "Something went wrong"
+            );
+        } finally {
+            setPaymentLoading(false);
+        }
+    };
+
 
     useEffect(() => {
         getAddresses()

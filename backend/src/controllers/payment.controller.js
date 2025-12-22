@@ -48,11 +48,12 @@ export async function createRazorpayOrder(req, res) {
         const shipping = 10;
         const tax = total * 0.08;
         const grandTotal = total + shipping + tax;
+        const amountInPaise = Math.round(grandTotal * 100);
 
         const razorpayOrder = await razorpay.orders.create({
-            amount: grandTotal * 100, // INR → paise
+            amount: amountInPaise,
             currency: "INR",
-            receipt: `receipt_${Date.now()}_${user._id}`,
+            receipt: `receipt_${Date.now()}`,
         });
 
         res.status(200).json({
