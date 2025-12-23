@@ -6,7 +6,15 @@ import { useAuthStore } from "../stores/useAuthStore";
 import { useEffect } from "react";
 import { useWishlistStore } from "../stores/useWishlistStore";
 import { useCartStore } from "../stores/useCartStore";
+import * as Notifications from "expo-notifications";
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 export default function RootLayout() {
   const { checkAuth, isCheckingAuth, token } = useAuthStore();
@@ -15,6 +23,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     checkAuth();
+    Notifications.requestPermissionsAsync();
   }, []);
 
   useEffect(() => {
@@ -24,10 +33,7 @@ export default function RootLayout() {
     }
   }, [token]);
 
-  if (isCheckingAuth) {
-    return null; // or splash / loader
-  }
-
+  if (isCheckingAuth) return null;
 
   return (
     <SafeAreaProvider>

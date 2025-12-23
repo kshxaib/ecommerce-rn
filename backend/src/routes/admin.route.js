@@ -8,14 +8,15 @@ import {
   updateOrderStatus,
   updateProduct,
   deleteProduct,
+  adminBroadcast,
 } from "../controllers/admin.controller.js";
 import { adminOnly, protectRoute } from "../middleware/auth.middleware.js";
 import { upload } from "../middleware/multer.middleware.js";
 
 const router = Router();
 
-// optimization - DRY
-// router.use();
+// Notification
+router.post("/notification", protectRoute, adminOnly, adminBroadcast);
 
 router.post("/products", protectRoute, adminOnly, upload.array("images", 3), createProduct);
 router.get("/products", protectRoute, adminOnly, getAllProducts);

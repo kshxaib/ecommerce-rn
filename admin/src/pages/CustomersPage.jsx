@@ -1,11 +1,16 @@
+import { useState, useEffect } from "react";
 import { customerApi } from "../lib/api";
 import { formatDate } from "../lib/utils";
-import { useState, useEffect } from "react";
+import axiosInstance from "../lib/axios";
 
-function CustomersPage() {
+export default function CustomersPage() {
   const [customers, setCustomers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [notifTitle, setNotifTitle] = useState("");
+  const [notifBody, setNotifBody] = useState("");
+  const [notifSending, setNotifSending] = useState(false);
 
+  // Fetch customers
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
@@ -22,14 +27,66 @@ function CustomersPage() {
     fetchCustomers();
   }, []);
 
+  // Send broadcast notification
+  const sendNotification = async () => {
+    if (!notifTitle || !notifBody) {
+      alert("Please enter both title and message");
+      return;
+    }
+
+    try {
+      setNotifSending(true);
+      await axiosInstance.post("/admin/notification", {
+        title: notifTitle,
+        body: notifBody,
+      });
+      alert("Notification sent successfully!");
+      setNotifTitle("");
+      setNotifBody("");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send notification");
+    } finally {
+      setNotifSending(false);
+    }
+  };
+
   return (
-    <div className="spacey-6">
+    <div className="space-y-8 p-6">
       {/* HEADER */}
       <div>
-        <h1 className="text-2xl font-bold">Customers</h1>
+        <h1 className="text-3xl font-bold">Customers</h1>
         <p className="text-base-content/70 mt-1">
           {customers.length} {customers.length === 1 ? "customer" : "customers"} registered
         </p>
+      </div>
+
+      {/* BROADCAST NOTIFICATION */}
+      <div className="card bg-base-100 shadow-md p-4 space-y-2">
+        <h2 className="text-xl font-semibold mb-2">Broadcast Notification</h2>
+        <div className="flex flex-col md:flex-row gap-2">
+          <input
+            type="text"
+            placeholder="Title"
+            value={notifTitle}
+            onChange={(e) => setNotifTitle(e.target.value)}
+            className="input input-bordered w-full md:w-1/4"
+          />
+          <input
+            type="text"
+            placeholder="Message"
+            value={notifBody}
+            onChange={(e) => setNotifBody(e.target.value)}
+            className="input input-bordered w-full md:w-1/2"
+          />
+          <button
+            onClick={sendNotification}
+            disabled={notifSending}
+            className={`btn btn-primary ${notifSending ? "loading" : ""}`}
+          >
+            Send
+          </button>
+        </div>
       </div>
 
       {/* CUSTOMERS TABLE */}
@@ -46,7 +103,7 @@ function CustomersPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="table">
+              <table className="table w-full">
                 <thead>
                   <tr>
                     <th>Customer</th>
@@ -56,39 +113,32 @@ function CustomersPage() {
                     <th>Joined Date</th>
                   </tr>
                 </thead>
-
                 <tbody>
                   {customers.map((customer) => (
                     <tr key={customer._id}>
                       <td className="flex items-center gap-3">
-                        <div className="avatar placeholder">
-                          <div className="bg-primary text-primary-content rounded-full w-12">
-                            <img
-                              src={customer.imageUrl}
-                              alt={customer.name}
-                              className="w-12 h-12 rounded-full"
-                            />
+                        <div className="avatar">
+                          <div className="w-12 h-12 rounded-full">
+                            <img src={customer.imageUrl} alt={customer.name} />
                           </div>
                         </div>
                         <div className="font-semibold">{customer.name}</div>
                       </td>
-
                       <td>{customer.email}</td>
-
                       <td>
                         <div className="badge badge-ghost">
                           {customer.addresses?.length || 0} address(es)
                         </div>
                       </td>
-
                       <td>
                         <div className="badge badge-ghost">
                           {customer.wishlist?.length || 0} item(s)
                         </div>
                       </td>
-
                       <td>
-                        <span className="text-sm opacity-60">{formatDate(customer.createdAt)}</span>
+                        <span className="text-sm opacity-60">
+                          {formatDate(customer.createdAt)}
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -101,4 +151,3 @@ function CustomersPage() {
     </div>
   );
 }
-export default CustomersPage;

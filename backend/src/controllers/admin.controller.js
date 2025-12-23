@@ -2,6 +2,10 @@ import cloudinary from "../config/cloudinary.js";
 import { Product } from "../models/product.model.js";
 import { Order } from "../models/order.model.js";
 import { User } from "../models/user.model.js";
+import { DeviceToken } from "../models/deviceToken.model.js";
+import fetch from "node-fetch";
+
+const EXPO_URL = "https://exp.host/--/api/v2/push/send";
 
 export async function createProduct(req, res) {
   try {
@@ -207,5 +211,51 @@ export const deleteProduct = async (req, res) => {
   } catch (error) {
     console.error("Error deleting product:", error);
     res.status(500).json({ message: "Failed to delete product" });
+  }
+};
+
+export const adminBroadcast = async (req, res) => {
+  try {
+    const { title, body } = req.body;
+
+    const devices = await DeviceToken.find({ platform: "expo" }).select("token");
+
+    if (!devices.length) {
+      return res.json({ message: "No registered devices" });
+    }
+
+    const messages = devices.map(d => ({
+      to: d.token,
+      sound: "default",
+      title,
+      body,
+    }));
+
+    const chunkSize = 100;
+
+    for (let i = 0; i < messages.length; i += chunkSize) {
+      const chunk = messages.slice(i, i + chunkSize);
+
+      const response = await fetch(EXPO_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(chunk),
+      });
+
+      const result = await response.json();
+
+      result.data?.forEach(async (ticket, index) => {
+        if (ticket.status === "error") {
+          await DeviceToken.deleteOne({
+            token: chunk[index].to,
+          });
+        }
+      });
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Broadcast failed" });
   }
 };

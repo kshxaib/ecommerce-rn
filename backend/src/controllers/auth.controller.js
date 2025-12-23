@@ -2,6 +2,7 @@ import { User } from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { ENV } from "../config/env.js";
+import { DeviceToken } from "../models/deviceToken.model.js";
 
 const generateToken = (userId) => {
     return jwt.sign({ id: userId }, ENV.JWT_SECRET, { expiresIn: "14d" })
@@ -9,7 +10,7 @@ const generateToken = (userId) => {
 
 export const register = async (req, res) => {
     try {
-        const { name, email, password, confirmPassword, device } = req.body;
+        const { name, email, password, confirmPassword, device, pushToken, platform } = req.body;
 
         if (!name || !email || !password || !confirmPassword) {
             return res.status(400).json({ message: "All fields are required" });
@@ -35,7 +36,7 @@ export const register = async (req, res) => {
             name,
             email,
             password: hashedPassword,
-            imageUrl, // 🔥 avatar saved
+            imageUrl,
         });
 
         const token = generateToken(user._id);
@@ -62,16 +63,22 @@ export const register = async (req, res) => {
         }
 
         // MOBILE
-        return res.status(201).json({
-            message: "User registered successfully",
-            token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                imageUrl: user.imageUrl,
-            },
-        });
+        if (device === "mobile") {
+            if (pushToken) {
+                await DeviceToken.findOneAndUpdate({ token: pushToken }, { userId: user._id, platform }, { upsert: true })
+            }
+
+            return res.status(201).json({
+                message: "User registered successfully",
+                token,
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    imageUrl: user.imageUrl,
+                },
+            });
+        }
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Internal server error" });
@@ -80,7 +87,7 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
     try {
-        const { email, password, device } = req.body;
+        const { email, password, device, pushToken, platform } = req.body;
 
         if (!email || !password) {
             return res.status(400).json({ message: "All fields are required" })
@@ -89,7 +96,7 @@ export const login = async (req, res) => {
         const user = await User.findOne({ email })
 
         if (!user) {
-            return res.status(400).json({ message: "User not found" })
+            return res.status(400).json({ message: "Invalid credentials" })
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -106,6 +113,9 @@ export const login = async (req, res) => {
             return res.status(200).json({ message: "User logged in successfully", user })
         }
         if (device === "mobile") {
+            if (pushToken) {
+                await DeviceToken.findOneAndUpdate({ token: pushToken }, { userId: user._id, platform }, { upsert: true })
+            }
             return res.status(200).json({ message: "User logged in successfully", user, token })
         }
     } catch (error) {
@@ -115,10 +125,15 @@ export const login = async (req, res) => {
 }
 
 export const logout = async (req, res) => {
-    const { device } = req.body;
+    const { device, pushToken } = req.body;
     try {
         if (device === "web") {
             res.clearCookie("token", { httpOnly: true, secure: true, sameSite: "strict" });
+        }
+        if (device === "mobile") {
+            if (pushToken) {
+                await DeviceToken.deleteOne({ token: pushToken })
+            }
         }
         return res.status(200).json({ message: "User logged out successfully" })
     } catch (error) {
